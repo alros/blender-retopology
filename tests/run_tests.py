@@ -60,16 +60,20 @@ def main():
     objs = [bpy.data.objects[n] for n in argv] or _corpus()
     failures = 0
     for ob in objs:
-        for guarantee in ("AUTO", "SUBDIVIDE"):
-            params = RetopoParams(target_faces=2000, guarantee=guarantee, voxel_faces=60_000)
+        for guarantee, sym in (("AUTO", False), ("SUBDIVIDE", False), ("AUTO", True)):
+            params = RetopoParams(target_faces=2000, guarantee=guarantee, voxel_faces=60_000,
+                                  use_symmetry=sym)
+            label = guarantee + ("+SYM" if sym else "")
             try:
                 res, rep = pipeline.run(ob, params)
                 ok = rep["all_quads"] and rep["non_manifold_edges"] == 0
                 ok &= 0.6 < rep["faces"] / params.target_faces < 1.6
+                if sym:
+                    ok &= rep["mirror_error"] < 1e-5
             except Exception as ex:  # noqa: BLE001
                 ok, rep = False, {"error": str(ex)}
             failures += not ok
-            print(("PASS" if ok else "FAIL"), ob.name, guarantee, json.dumps(rep))
+            print(("PASS" if ok else "FAIL"), ob.name, label, json.dumps(rep))
     print(f"{failures} failure(s)")
     sys.exit(1 if failures else 0)
 

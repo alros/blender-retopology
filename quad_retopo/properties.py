@@ -29,7 +29,10 @@ class QR_Settings(bpy.types.PropertyGroup):
     voxel_faces: IntProperty(
         name="Cleanup Density", default=_D.voxel_faces, min=10_000, soft_max=1_000_000,
         description="Approximate face count of the cleaned working copy")
-    use_symmetry: BoolProperty(name="X Symmetry", default=_D.use_symmetry)
+    use_symmetry: BoolProperty(
+        name="X Symmetry", default=_D.use_symmetry,
+        description="Mirror the result across the source's local X plane: identical "
+                    "topology and positions on both sides (always uses the subdivide path)")
     smooth_normals: BoolProperty(name="Smooth Normals", default=_D.smooth_normals)
     seed: IntProperty(name="Seed", default=_D.seed, min=0)
     relax_iterations: IntProperty(name="Relax Iterations", default=_D.relax_iterations,

@@ -99,12 +99,19 @@ def mean_edge_length(obj):
     return float(np.linalg.norm(co[e[:, 0]] - co[e[:, 1]], axis=1).mean())
 
 
-def finish(obj, source, params, depsgraph):
-    """Relax + reproject a few times, then shade smooth."""
+def finish(obj, source, params, depsgraph, symmetriser=None):
+    """Relax + reproject a few times, then shade smooth.
+
+    With a symmetriser, positions are re-symmetrised after every step so the
+    result is exactly mirrored even if the source is slightly asymmetric.
+    """
     surf = SourceSurface(source, depsgraph)
+    sym = symmetriser.apply if symmetriser else (lambda o: None)
     for _ in range(max(params.reproject_passes, 1)):
         limit = 2.0 * mean_edge_length(obj)
         if params.relax_iterations > 0:
             relax(obj, params.relax_iterations, params.relax_strength)
+            sym(obj)
         reproject(obj, surf, limit)
+        sym(obj)
     obj.data.shade_smooth()

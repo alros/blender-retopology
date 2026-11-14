@@ -3,7 +3,7 @@ import time
 
 import bpy
 
-from . import postprocess, preprocess, validate
+from . import postprocess, preprocess, symmetry, validate
 from .backends import get_backend
 from .params import RetopoParams
 
@@ -66,7 +66,17 @@ def _solve_and_finish(obj, source, params, backend, info, step, timings):
         postprocess.join_triangles(obj)
 
     subdivided = False
-    if params.guarantee == 'SUBDIVIDE':
+    plane = symmetriser = None
+    if params.use_symmetry:
+        # The seam cut leaves mixed polygons, so symmetry always takes the
+        # subdivide path: quarter density -> cut/mirror -> Catmull-Clark.
+        plane = symmetry.MirrorPlane(source)
+        solve(params.target_faces / 4)
+        symmetry.cut_half(obj, plane, snap=0.3 * postprocess.mean_edge_length(obj))
+        symmetry.mirror_weld(obj, plane)
+        postprocess.catmull_clark(obj)
+        subdivided = True
+    elif params.guarantee == 'SUBDIVIDE':
         solve(params.target_faces / 4)
         postprocess.catmull_clark(obj)
         subdivided = True
@@ -83,10 +93,16 @@ def _solve_and_finish(obj, source, params, backend, info, step, timings):
     info["subdivided"] = subdivided
     step("solve", 0.7)
 
-    postprocess.finish(obj, source, params, bpy.context.evaluated_depsgraph_get())
+    if plane is not None:
+        symmetriser = symmetry.Symmetriser(obj, plane)
+        info["mirror_pairing_error"] = symmetriser.error(obj)
+    postprocess.finish(obj, source, params, bpy.context.evaluated_depsgraph_get(),
+                       symmetriser=symmetriser)
     step("relax_reproject", 0.9)
 
     rep = validate.report(obj, source, bpy.context.evaluated_depsgraph_get())
+    if symmetriser is not None:
+        rep["mirror_error"] = symmetriser.error(obj)
     step("validate", 1.0)
 
     if not rep["all_quads"]:

@@ -17,6 +17,7 @@ def report(obj, source, depsgraph, sample=20000):
     bm.free()
 
     # Distance from result vertices to the source surface (subsampled).
+    # The result is in world space; the BVH is in the source's local space.
     bvh = BVHTree.FromObject(source, depsgraph)
     mw_inv = source.matrix_world.inverted()
     co = meshutil.get_co(me)

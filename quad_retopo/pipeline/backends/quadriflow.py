@@ -52,7 +52,9 @@ class QuadriFlowBackend(Backend):
         try:
             with bpy.context.temp_override(**override):
                 res = bpy.ops.object.quadriflow_remesh(
-                    use_mesh_symmetry=params.use_symmetry,
+                    # QuadriFlow's own symmetry is unreliable; the pipeline
+                    # mirrors the result exactly instead (see symmetry.py).
+                    use_mesh_symmetry=False,
                     use_preserve_sharp=False,
                     use_preserve_boundary=False,
                     preserve_attributes=False,
