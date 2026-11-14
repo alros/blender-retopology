@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Blender
+*.blend1
+*.blend2
+*.blend@
+/*.blend
+
+# Built extension packages
+*.zip
+dist/
+build/
+
+# Test output
+tests/output/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Claude Code local settings
+.claude/settings.local.json
