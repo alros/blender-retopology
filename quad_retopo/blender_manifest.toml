@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "quad_retopo"
+version = "0.1.0"
+name = "Quad Retopo"
+tagline = "Automatic all-quad retopology for organic sculpts"
+maintainer = "blender-retopology"
+type = "add-on"
+
+tags = ["Mesh", "Modeling"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
