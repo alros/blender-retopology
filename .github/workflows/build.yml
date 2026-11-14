@@ -1,0 +1,100 @@
+name: Build extension
+
+# - Every push / pull request: validate the manifest, run the headless tests,
+#   build the extension zip and keep it as a workflow artifact.
+# - Pushing a tag like v0.2.0: additionally publish the zip as a GitHub Release
+#   (the tag must match `version` in quad_retopo/blender_manifest.toml).
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  BLENDER_VERSION: "5.3.0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Blender runtime libraries
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1
+
+      - name: Cache Blender
+        id: cache-blender
+        uses: actions/cache@v4
+        with:
+          path: blender
+          key: blender-${{ env.BLENDER_VERSION }}-linux-x64
+
+      - name: Download Blender
+        if: steps.cache-blender.outputs.cache-hit != 'true'
+        run: |
+          series="${BLENDER_VERSION%.*}"
+          url="https://download.blender.org/release/Blender${series}/blender-${BLENDER_VERSION}-linux-x64.tar.xz"
+          echo "Downloading $url"
+          curl -fsSL "$url" -o blender.tar.xz
+          mkdir blender
+          tar -xf blender.tar.xz -C blender --strip-components=1
+          rm blender.tar.xz
+
+      - name: Blender version
+        run: ./blender/blender --version
+
+      - name: Validate manifest
+        run: ./blender/blender --command extension validate quad_retopo
+
+      - name: Run headless tests
+        run: ./blender/blender -b --factory-startup --python-exit-code 1 --python tests/run_tests.py
+
+      - name: Build extension zip
+        run: |
+          mkdir -p dist
+          ./blender/blender --command extension build --source-dir quad_retopo --output-dir dist
+          ls -l dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quad_retopo-extension
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches manifest version
+        run: |
+          manifest_version=$(sed -nE 's/^version *= *"([^"]+)".*/\1/p' quad_retopo/blender_manifest.toml)
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$manifest_version" != "$tag_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $manifest_version"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: quad_retopo-extension
+          path: dist
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "Quad Retopo $GITHUB_REF_NAME" \
+            --generate-notes
