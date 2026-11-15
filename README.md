@@ -7,6 +7,18 @@ clean mesh made **only of quads**, with a face count you choose. It is tuned for
 organic models such as bodies, heads and creatures. The source object is never
 modified: the result is written to a new object named `<source>_retopo`.
 
+Sculpt:
+
+![sculpt.png](sculpt.png)
+
+Retopology:
+
+![retopo.png](retopo.png)
+
+Menu:
+
+![extension.png](extension.png)
+
 ## Install
 
 1. Zip the `quad_retopo` folder (the zip must contain `quad_retopo/blender_manifest.toml`).
@@ -140,8 +152,10 @@ mkdir -p dist
 On GitHub, [.github/workflows/build.yml](.github/workflows/build.yml) does this
 automatically. Every push to `main` and every pull request downloads Blender
 (cached between runs), validates the manifest, runs the headless tests, and
-builds the zip. The zip is attached to the run as the `quad_retopo-extension`
-artifact.
+builds the zip. The extension is attached to the run as an artifact named after
+the package (e.g. `quad_retopo-0.1.0`). Downloading it gives
+`quad_retopo-0.1.0.zip`, which can be installed directly with *Install from
+Disk…*.
 
 To publish a release, bump `version` in `quad_retopo/blender_manifest.toml`,
 commit, then push a matching tag:
