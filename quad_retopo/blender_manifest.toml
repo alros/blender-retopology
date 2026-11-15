@@ -3,9 +3,10 @@ schema_version = "1.0.0"
 id = "quad_retopo"
 version = "0.1.0"
 name = "Quad Retopo"
-tagline = "Automatic all-quad retopology for organic sculpts"
+tagline = "All-quad retopology - github.com/alros/blender-retopology"
 maintainer = "blender-retopology"
 type = "add-on"
+website = "https://github.com/alros/blender-retopology"
 
 tags = ["Mesh", "Modeling"]
 
