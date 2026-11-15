@@ -56,17 +56,30 @@ jobs:
         run: ./blender/blender -b --factory-startup --python-exit-code 1 --python tests/run_tests.py
 
       - name: Build extension zip
+        id: build
         run: |
           mkdir -p dist
           ./blender/blender --command extension build --source-dir quad_retopo --output-dir dist
           ls -l dist
+          zip_path=$(ls dist/*.zip)
+          name=$(basename "$zip_path" .zip)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          # GitHub always wraps an artifact in its own zip. Upload the
+          # *unpacked* extension so that zip is directly installable
+          # (blender_manifest.toml at its root) instead of a zip in a zip.
+          mkdir -p "dist/$name"
+          unzip -q "$zip_path" -d "dist/$name"
+          test -f "dist/$name/blender_manifest.toml"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quad_retopo-extension
-          path: dist/*.zip
+          # Downloads as <name>.zip, e.g. quad_retopo-0.1.0.zip
+          name: ${{ steps.build.outputs.name }}
+          path: dist/${{ steps.build.outputs.name }}/
           if-no-files-found: error
+    outputs:
+      name: ${{ steps.build.outputs.name }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -88,8 +101,14 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: quad_retopo-extension
-          path: dist
+          name: ${{ needs.build.outputs.name }}
+          path: pkg
+
+      - name: Re-zip extension
+        run: |
+          mkdir -p dist
+          (cd pkg && zip -qr "../dist/${{ needs.build.outputs.name }}.zip" .)
+          unzip -l dist/*.zip
 
       - name: Publish GitHub Release
         env:
