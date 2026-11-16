@@ -165,7 +165,15 @@ git tag v0.2.0 && git push origin v0.2.0
 ```
 
 The workflow then creates a GitHub Release with the zip attached. It fails if
-the tag and the manifest version differ. To test against another Blender
+the tag and the manifest version differ. To catch that before pushing, enable
+the repo's pre-push hook once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+It refuses to push a `v*` tag that doesn't match `version` in the manifest at
+the tagged commit. To test against another Blender
 version, change `BLENDER_VERSION` in the workflow.
 
 ## Limitations

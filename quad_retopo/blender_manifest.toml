@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "quad_retopo"
-version = "0.1.0"
+version = "0.1.2"
 name = "Quad Retopo"
 tagline = "All-quad retopology - github.com/alros/blender-retopology"
 maintainer = "blender-retopology"
